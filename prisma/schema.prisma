@@ -1,0 +1,28 @@
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  collections Collection[]
+  createdAt DateTime @default(now())
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String
+  coverUrl    String
+  fileUrl     String
+  isApproved  Boolean @default(false)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+enum Role {
+  USER
+  AUTHOR
+  ADMIN
+}
