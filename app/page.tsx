@@ -1,105 +1,76 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, Book, FileText, Headphones, Video, ScrollText, Filter, X } from 'lucide-react'
+import { Search, Book, FileText, Headphones, Video, ScrollText, Filter, X, Home } from 'lucide-react'
 
 type Collection = {
   id: string
   title: string
+  description: string
   category: string
-  meta: string
-  cover: string
-  description?: string
+  coverUrl?: string
+  fileUrl?: string
+  createdAt: string
+  author: { id: string; name?: string | null; email: string }
 }
+
 
 const CATEGORIES = [
   { id: 'all', name: 'All', icon: Filter },
-  { id: 'books', name: 'Books', icon: Book },
-  { id: 'journals', name: 'Journals', icon: FileText },
-  { id: 'audio', name: 'Audio', icon: Headphones },
-  { id: 'video', name: 'Video', icon: Video },
-  { id: 'manuscripts', name: 'Manuscripts', icon: ScrollText },
-]
-
-const COLLECTIONS: Collection[] = [
-  {
-    id: 'gatsby',
-    title: 'The Great Gatsby',
-    category: 'books',
-    meta: 'Books · 1925 · F. Scott Fitzgerald',
-    cover: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&h=600&fit=crop',
-  },
-  {
-    id: 'journal-computing',
-    title: 'Journal of Computing',
-    category: 'journals',
-    meta: 'Journals · Vol. 12 · 2023',
-    cover: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop',
-  },
-  {
-    id: 'shakespeare-audio',
-    title: 'Shakespeare Plays (Audio)',
-    category: 'audio',
-    meta: 'Audio · Narrated collection',
-    cover: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&h=600&fit=crop',
-  },
-  {
-    id: 'history-documentary',
-    title: 'History Documentary',
-    category: 'video',
-    meta: 'Video · 90 min',
-    cover: 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=800&h=600&fit=crop',
-  },
-  {
-    id: 'ancient-scripts',
-    title: 'Ancient Scripts',
-    category: 'manuscripts',
-    meta: 'Manuscripts · Rare',
-    cover: 'https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?w=800&h=600&fit=crop',
-  },
-  // Additional collections for better grid layout
-  {
-    id: 'modern-physics',
-    title: 'Modern Physics',
-    category: 'books',
-    meta: 'Books · 2022 · Scientific',
-    cover: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=800&h=600&fit=crop',
-  },
-  {
-    id: 'art-history',
-    title: 'Art History Journal',
-    category: 'journals',
-    meta: 'Journals · Quarterly · Illustrated',
-    cover: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&h=600&fit=crop',
-  },
-  {
-    id: 'classical-music',
-    title: 'Classical Music Collection',
-    category: 'audio',
-    meta: 'Audio · 120+ tracks',
-    cover: 'https://images.unsplash.com/photo-1535905557558-afc4877a26fc?w=800&h=600&fit=crop',
-  },
+  { id: 'Books', name: 'Books', icon: Book },
+  { id: 'Research Papers', name: 'Research Papers', icon: FileText },
+  { id: 'Articles', name: 'Articles', icon: FileText },
+  { id: 'Journals', name: 'Journals', icon: FileText },
+  { id: 'Magazines', name: 'Magazines', icon: FileText },
+  { id: 'Documents', name: 'Documents', icon: FileText },
+  { id: 'Theses', name: 'Theses', icon: FileText },
+  { id: 'Presentations', name: 'Presentations', icon: FileText },
 ]
 
 export default function HomePage() {
+  const router = useRouter()
+  const [collections, setCollections] = useState<Collection[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState('all')
   const [search, setSearch] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+  // Fetch collections on mount
+  useEffect(() => {
+    async function fetchCollections() {
+      try {
+        const res = await fetch('/api/collections')
+        if (!res.ok) throw new Error('Failed to fetch collections')
+        const data = await res.json()
+        setCollections(data)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCollections()
+  }, [])
+
   // Filter collections based on category and search
   const filteredCollections = useMemo(() => {
-    return COLLECTIONS.filter((item) => {
+    return collections.filter((item) => {
       const matchesCategory = activeCategory === 'all' || item.category === activeCategory
       const matchesSearch =
         search === '' ||
         item.title.toLowerCase().includes(search.toLowerCase()) ||
-        item.meta.toLowerCase().includes(search.toLowerCase())
+        item.description.toLowerCase().includes(search.toLowerCase()) ||
+        item.author.name?.toLowerCase().includes(search.toLowerCase()) ||
+        item.author.email.toLowerCase().includes(search.toLowerCase())
 
       return matchesCategory && matchesSearch
     })
-  }, [activeCategory, search])
+  }, [collections, activeCategory, search])
 
   // Update year in footer
   const currentYear = new Date().getFullYear()
@@ -117,6 +88,29 @@ export default function HomePage() {
   const handleResetFilters = () => {
     setActiveCategory('all')
     setSearch('')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading collections...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-5xl mb-4">📚</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Collections</h2>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -157,8 +151,7 @@ export default function HomePage() {
       </header>
 
       {/* Hero Banner Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700">
-        <div className="absolute inset-0 bg-black/10" />
+      <section className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700" style={{ backgroundImage: 'url(lib2.jpeg)' }}>
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:py-20 lg:py-24 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="mb-4 text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
@@ -190,18 +183,7 @@ export default function HomePage() {
                 )}
               </div>
             </div>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-2 text-sm text-blue-100">
-              <span>Popular:</span>
-              {['Fiction', 'Science', 'History', 'Biography', 'Technology'].map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => setSearch(tag)}
-                  className="rounded-full bg-white/10 px-3 py-1 hover:bg-white/20 transition-colors"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
+            
           </div>
         </div>
       </section>
@@ -228,9 +210,9 @@ export default function HomePage() {
                 {CATEGORIES.map((category) => {
                   const Icon = category.icon
                   const isActive = activeCategory === category.id
-                  const count = category.id === 'all' 
-                    ? COLLECTIONS.length 
-                    : COLLECTIONS.filter(item => item.category === category.id).length
+                  const count = category.id === 'all'
+                    ? collections.length
+                    : collections.filter(item => item.category === category.id).length
                   
                   return (
                     <li key={category.id}>
@@ -267,7 +249,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Total</span>
-                    <span className="font-semibold text-gray-800">{COLLECTIONS.length}</span>
+                    <span className="font-semibold text-gray-800">{collections.length}</span>
                   </div>
                 </div>
               </div>
@@ -298,13 +280,19 @@ export default function HomePage() {
                     >
                       <Link href={`/collection/${item.id}`} className="block">
                         <figure className="card-cover relative h-48 overflow-hidden">
-                          <Image
-                            src={item.cover}
-                            alt={`Cover: ${item.title}`}
-                            fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className="object-cover hover:scale-105 transition-transform duration-300"
-                          />
+                          {item.coverUrl ? (
+                            <Image
+                              src={item.coverUrl}
+                              alt={`Cover: ${item.title}`}
+                              fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                              className="object-cover hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                              <Book className="h-12 w-12 text-blue-600" />
+                            </div>
+                          )}
                           <div className="absolute top-3 right-3">
                             <span className="bg-black/70 text-white text-xs px-2 py-1 rounded">
                               {item.category}
@@ -316,8 +304,11 @@ export default function HomePage() {
                           <h3 className="card-title text-lg font-bold text-gray-800 mb-2 line-clamp-2">
                             {item.title}
                           </h3>
-                          <p className="card-meta text-sm text-gray-600">
-                            {item.meta}
+                          <p className="card-meta text-sm text-gray-600 mb-2">
+                            {item.category} · {new Date(item.createdAt).toLocaleDateString()}
+                          </p>
+                          <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                            by {item.author.name || item.author.email.split('@')[0]}
                           </p>
                           <div className="mt-4">
                             <span className="text-blue-600 text-sm font-medium hover:text-blue-800">
@@ -346,7 +337,7 @@ export default function HomePage() {
           </main>
         </div>
       </div>
-
+     
       {/* Footer */}
       <footer className="site-footer bg-gray-800 text-white mt-12">
         <div className="container mx-auto px-4 py-8">
@@ -359,6 +350,15 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Home Button */}
+      <button
+        onClick={() => router.push('/auth/login')}
+        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-colors duration-200 z-50"
+        aria-label="Go to login"
+      >
+        <Home className="w-6 h-6" />
+      </button>
 
       {/* Add Tailwind CSS for styling */}
       <style jsx global>{`

@@ -1,0 +1,101 @@
+/* Register page styles (mostly same as login) */
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #f7fbff 0%, #f5f6fb 100%);
+  padding: 2rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 520px;
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
+  border: 1px solid rgba(16, 24, 40, 0.04);
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.brand h2 {
+  margin: 0;
+  color: #0b63d6;
+  font-size: 1.5rem;
+}
+
+.lead {
+  margin-top: 0.35rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  color: #334155;
+  margin-bottom: 0.25rem;
+}
+
+.input {
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid #e6e9ee;
+  background: #fff;
+  font-size: 0.95rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #0b63d6;
+  box-shadow: 0 0 0 4px rgba(11, 99, 214, 0.08);
+}
+
+.button {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: #0b63d6;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.button:hover {
+  background: #0952a8;
+}
+
+.footer {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.link {
+  font-size: 0.9rem;
+  color: #0b63d6;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.error {
+  margin-top: 0.75rem;
+  color: #b91c1c;
+  font-size: 0.9rem;
+  text-align: center;
+}
