@@ -1,15 +1,19 @@
-import prisma from "../../lib/prisma";
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-  BookOpen, 
-  Users, 
-  Clock, 
-  FileText, 
-  User, 
+import {
+  BookOpen,
+  Users,
+  Clock,
+  FileText,
+  User,
   FolderOpen,
   ArrowUpRight,
   Upload,
-  Library
+  Library,
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 
 type RecentCollection = {
@@ -21,32 +25,59 @@ type RecentCollection = {
   author: { id: string; name?: string | null; email: string };
 };
 
-async function getDashboardData() {
-  const [totalCollections, totalUsers, pendingCollections, recent] = await Promise.all([
-    prisma.collection.count(),
-    prisma.user.count(),
-    prisma.collection.count({ where: { isApproved: false } }),
-    prisma.collection.findMany({
-      take: 6,
-      orderBy: { createdAt: "desc" },
-      include: { author: { select: { id: true, name: true, email: true } } },
-    }),
-  ]);
+type DashboardData = {
+  totalCollections: number;
+  totalUsers: number;
+  pendingCollections: number;
+  recentCollections: RecentCollection[];
+};
 
-  const recentCollections: RecentCollection[] = recent.map((c) => ({
-    id: c.id,
-    title: c.title,
-    category: c.category,
-    coverUrl: c.coverUrl,
-    createdAt: c.createdAt.toISOString(),
-    author: { id: c.author.id, name: c.author.name, email: c.author.email },
-  }));
+export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  return { totalCollections, totalUsers, pendingCollections, recentCollections };
-}
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        const response = await fetch('/api/dashboard');
+        if (!response.ok) throw new Error('Failed to fetch dashboard data');
+        const dashboardData = await response.json();
+        setData(dashboardData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    }
 
-export default async function DashboardPage() {
-  const { totalCollections, totalUsers, pendingCollections, recentCollections } = await getDashboardData();
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
+          <p className="text-gray-600">{error || 'Unable to load dashboard data'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { totalCollections, totalUsers, pendingCollections, recentCollections } = data;
 
   const statCards = [
     {
